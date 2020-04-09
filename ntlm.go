@@ -54,6 +54,8 @@ func init() {
 type NTLMTransport struct {
 	*reverseproxy.HTTPTransport
 
+	ctx caddy.Context
+
 	transports   map[string]*http.Transport
 	transportsMu *sync.RWMutex
 }
@@ -72,6 +74,7 @@ func (NTLMTransport) CaddyModule() caddy.ModuleInfo {
 
 // Provision sets up the transport module.
 func (n *NTLMTransport) Provision(ctx caddy.Context) error {
+	n.ctx = ctx
 	n.transports = make(map[string]*http.Transport)
 	n.transportsMu = new(sync.RWMutex)
 
@@ -158,7 +161,7 @@ func (n *NTLMTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 // newTransport makes an NTLM-compatible transport.
 func (n *NTLMTransport) newTransport() (*http.Transport, error) {
 	// start with a regular HTTP transport
-	transport, err := n.HTTPTransport.NewTransport()
+	transport, err := n.HTTPTransport.NewTransport(n.ctx)
 	if err != nil {
 		return nil, err
 	}
