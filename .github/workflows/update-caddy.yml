@@ -1,0 +1,42 @@
+name: Update Caddy to latest
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+
+      - name: Update Caddy dep
+        run: |
+          go get github.com/caddyserver/caddy/v2@latest
+          go mod tidy
+
+      - name: Build to validate
+        run: go build ./...
+
+      - name: Create PR with changes
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: bump caddy to latest and run go mod tidy"
+          title: "Update: Caddy to latest + go mod tidy"
+          body: |
+            Automated update:
+            - `go get github.com/caddyserver/caddy/v2@latest`
+            - `go mod tidy`
+            - Verified with `go build ./...`
+          branch: chore/update-caddy
+          delete-branch: true
