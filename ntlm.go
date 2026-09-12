@@ -203,12 +203,17 @@ func (n *NTLMTransport) Cleanup() error {
 		return err
 	}
 
+	// Closing a connection runs unbinderConn.Close, which removes the
+	// connection's client from n.transports under transportsMu. The lock
+	// is therefore released before the connections are closed.
 	n.transportsMu.Lock()
-	for _, t := range n.transports {
-		t.CloseIdleConnections()
-	}
+	transports := n.transports
 	n.transports = make(map[string]*http.Transport)
 	n.transportsMu.Unlock()
+
+	for _, t := range transports {
+		t.CloseIdleConnections()
+	}
 
 	return nil
 }
